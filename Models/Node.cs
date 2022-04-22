@@ -10,6 +10,9 @@ namespace Listener.Models
         public double Humidity { get; set; }
         [DataType(DataType.Date)]
         public DateTime LastUpdate { get; set; }
+        public bool InManualMode { get; set; } = false;
+        public double? TargetTemperature { get; set; }
+        public double? TargetHumidity { get; set; }
         public bool Arch { get; set; }
     }
 }

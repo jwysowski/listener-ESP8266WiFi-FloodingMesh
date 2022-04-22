@@ -42,10 +42,14 @@ await client.SubscribeAsync(
     new MqttTopicFilter
     {
         Topic = "gate/humidity"
+    },
+    new MqttTopicFilter
+    {
+        Topic = "gate/command"
     }
 );
 
-Console.WriteLine("Press any key to stop the server.");
+Console.WriteLine("Press enter to stop the server.");
 Console.ReadLine();
 
 await server.StopAsync();

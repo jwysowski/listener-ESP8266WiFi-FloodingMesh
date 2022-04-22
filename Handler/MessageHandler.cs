@@ -1,15 +1,20 @@
 using MQTTnet;
 using Listener.Models;
+using MessageTypes;
 
 namespace MessageHandler
 {
     public class Handler
     {
         private readonly ListenerContext _context;
+        private readonly MessageTypesLUT _typesLUT;
+        private bool _isCommand;
 
         public Handler(ListenerContext context)
         {
             _context = context;
+            _typesLUT = new MessageTypesLUT();
+            _isCommand = false;
         }
         public async Task Handle(MqttApplicationMessageReceivedEventArgs msg)
         {
@@ -29,7 +34,12 @@ namespace MessageHandler
                 return;
 
             log.NodeId = log.Message.Substring(7, 10);
-            log.Type = log.Message[1] == '0' ? "temperature" : "humidity";
+            log.Type = _typesLUT.GetMessageType(log.Message[1]);
+            if (log.Type != "Temperature" && log.Type != "Humidity")
+                _isCommand = true;
+            else
+                _isCommand = false;
+
             log.Value = Convert.ToDouble(log.Message.Substring(2, 5));
             log.Timestamp = System.DateTime.Now;
 
@@ -49,11 +59,31 @@ namespace MessageHandler
             }
 
             node.NodeId = log.NodeId;
-            if (log.Message[1] == '0')
-                node.Temperature = log.Value;
+            if (!_isCommand)
+            {
+                if (_typesLUT.SetTemperature(log.Message[1]))
+                    node.Temperature = log.Value;
+                else
+                    node.Humidity = log.Value;
+            }
             else
-                node.Humidity = log.Value;
+            {
+                if (!_typesLUT.GetMode(log.Message[1]))
+                {
+                    node.TargetTemperature = null;
+                    node.TargetHumidity = null;
+                }
+                else if (_typesLUT.SetTemperature(log.Message[1]))
+                {
+                    node.TargetTemperature = log.Value;
+                }
+                else
+                {
+                    node.TargetHumidity = log.Value;
+                }
+            }
 
+            node.InManualMode = _isCommand ? _typesLUT.GetMode(log.Message[1]) : node.InManualMode;
             node.LastUpdate = log.Timestamp;
             node.Arch = false;
 
