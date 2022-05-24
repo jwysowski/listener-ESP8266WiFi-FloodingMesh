@@ -33,7 +33,7 @@ namespace MessageHandler
             log.Message = System.Text.Encoding.UTF8.GetString(
                 msg?.ApplicationMessage?.Payload ?? Array.Empty<byte>());
 
-
+            Console.WriteLine(log.Message);
             if (log.Message[0] != ':')
                 return;
 
